@@ -10,8 +10,6 @@ def get_maze(dim: int = 10, p: float = 0.1):
         for column in range(dim):
             # choose if blocked or not via weights
             # 0 = safe, 1 = blocked
-            print(f"{p}\t{1-p}")
-            print(random.choices([True, False], weights=(p, 1 - p), k=3))
             if random.choices([True, False], weights=(p, 1 - p), k=3)[0]:
                 grid[row].append(1)
             else:
