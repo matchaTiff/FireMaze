@@ -77,7 +77,7 @@ def show_maze(_maze: list):
 
     for row in range(dim):
         for col in range(dim):
-            if _maze[row][col]:
+            if _maze[row][col] == 1:
                 # create rectangle with margins based on it's position
                 cell = pygame.Rect((MARGIN + CELL_SIZE) * col + MARGIN,
                                    (MARGIN + CELL_SIZE) * row + MARGIN,
@@ -85,6 +85,12 @@ def show_maze(_maze: list):
                                    CELL_SIZE)
                 # draw cells to the screen
                 pygame.draw.rect(screen, BLACK, cell)
+            elif _maze[row][col] == 2:
+                cell = pygame.Rect((MARGIN + CELL_SIZE) * col + MARGIN,
+                                   (MARGIN + CELL_SIZE) * row + MARGIN,
+                                   CELL_SIZE,
+                                   CELL_SIZE)
+                pygame.draw.rect(screen, RED, cell)
             else:
                 cell = pygame.Rect((MARGIN + CELL_SIZE) * col + MARGIN,
                                    (MARGIN + CELL_SIZE) * row + MARGIN,
@@ -104,7 +110,7 @@ def show_maze(_maze: list):
                        (MARGIN + CELL_SIZE) * (dim - 1) + MARGIN,
                        CELL_SIZE,
                        CELL_SIZE)
-    pygame.draw.rect(screen, RED, cell)
+    pygame.draw.rect(screen, GREEN, cell)
 
     # update entire display so the rectangles are actually drawn on the screen
     pygame.display.flip()
@@ -114,6 +120,10 @@ maze = get_maze()
 print(maze)
 
 show_maze(maze)
+
+fired = start_fire(maze)
+print(f"Fire starts: {fired[1]}")
+show_maze(fired[0])
 
 # keep program running until user exits the window
 running = True
