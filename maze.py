@@ -1,5 +1,9 @@
 import pygame
 import random
+import sys
+
+if sys.version_info[0] < 3:
+    raise Exception("Python 3 is required for this program.")
 
 
 def get_maze(dim: int = 10, p: float = 0.1):
@@ -15,7 +19,7 @@ def get_maze(dim: int = 10, p: float = 0.1):
         for column in range(dim):
             # choose if blocked or not via weights
             # 0 = safe, 1 = blocked
-            if random.choices([True, False], weights=(p, 1 - p), k=3)[0]:
+            if random.choices([True, False], weights=(p, 1 - p), k=1)[0]:
                 grid[row].append(1)
             else:
                 grid[row].append(0)
