@@ -3,7 +3,12 @@ import random
 
 
 def get_maze(dim: int = 10, p: float = 0.1):
-    # creates grid based on the dimensions given
+    """
+    Creates dim x dim grid with p probability blocks
+    :param dim: dimensions
+    :param p: probability of a single space being blocked
+    :return: maze as a grid/2 dimensional list
+    """
     grid = []
     for row in range(dim):
         grid.append([])
@@ -17,7 +22,40 @@ def get_maze(dim: int = 10, p: float = 0.1):
     return grid
 
 
-def show_maze(maze: list):
+def start_fire(_maze: list):
+    """
+    Selects a random valid (not start, end, or blocked) block and "starts a fire" there.
+    :param _maze: maze as a grid
+    :return: tuple of the new maze and the coordinates of the selected block.
+    """
+    dim = len(_maze)
+    valid = False
+
+    while not valid:
+        row = random.randint(0, dim-1)
+        col = random.randint(0, dim-1)
+        # don't start fire on start block
+        if row == 0 and col == 0:
+            continue
+        # don't start fire on end block
+        elif row == dim-1 and col == dim-1:
+            continue
+        # check if the coordinate is blocked
+        # if yes, then still not valid
+        if _maze[row][col]:
+            continue
+        # otherwise, we start the fire there
+        else:
+            _maze[row][col] = 2
+            return _maze, (row, col)
+
+
+def show_maze(_maze: list):
+    """
+    Takes in a maze and displays it on a new pygame window.
+    :param _maze:
+    :return: n/a
+    """
     # colors
     BLACK = (50, 50, 50)
     WHITE = (240, 237, 235)
@@ -34,12 +72,12 @@ def show_maze(maze: list):
     screen.fill(BLACK)
 
     MARGIN = 1
-    dim = len(maze)
+    dim = len(_maze)
     CELL_SIZE = WINDOW_SIZE[0] / dim - 1
 
     for row in range(dim):
         for col in range(dim):
-            if maze[row][col]:
+            if _maze[row][col]:
                 # create rectangle with margins based on it's position
                 cell = pygame.Rect((MARGIN + CELL_SIZE) * col + MARGIN,
                                    (MARGIN + CELL_SIZE) * row + MARGIN,
