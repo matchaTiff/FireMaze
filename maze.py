@@ -149,7 +149,7 @@ def get_valid_neighbors(_maze, current, visited):
   return neighbors
     
 
-def dfs_search(_maze, start, goal):
+def dfs(_maze, start, goal):
   """
   Runs dfs on the maze and determines whether the goal is reachable
   :param _maze: maze as a grid
@@ -209,7 +209,7 @@ fired = start_fire(maze)
 print(f"Fire starts: {fired[1]}")
 show_maze(fired[0])
 
-dfs_search(maze, (0, 0), (dim-1, dim-1))
+dfs(maze, (0, 0), (dim-1, dim-1))
 
 # keep program running until user exits the window
 running = True
