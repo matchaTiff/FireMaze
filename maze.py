@@ -1,6 +1,5 @@
 import pygame
 import random
-import queue
 import sys
 
 # colors
@@ -137,19 +136,15 @@ def get_valid_neighbors(_maze, current, visited):
   # left
   if row > 0 and (row - 1, col) not in visited and _maze[row - 1][col] != 1 and _maze[row - 1][col] != 2:
     neighbors.append((row - 1, col))
-    visited.append((row - 1, col))
   # right
   if row + 1 < dim and (row + 1, col) not in visited and _maze[row + 1][col] != 1 and _maze[row + 1][col] != 2:
     neighbors.append((row + 1, col))
-    visited.append((row + 1, col))
   # down
   if col > 0 and (row, col - 1) not in visited and _maze[row][col - 1] != 1 and _maze[row][col - 1] != 2:
     neighbors.append((row, col - 1))
-    visited.append((row, col - 1))
   # up
   if col + 1 < dim and (row, col + 1) not in visited and _maze[row][col + 1] != 1 and _maze[row][col + 1] != 2:
     neighbors.append((row, col + 1))
-    visited.append((row, col + 1))
 
   return neighbors
     
@@ -179,6 +174,9 @@ def dfs(_maze, start, goal):
                         CELL_SIZE,
                         CELL_SIZE)
       pygame.draw.rect(screen, GREY, cell)
+      # animate path
+      pygame.display.update()
+      pygame.time.delay(30)
 
     if current == goal:
 
@@ -194,7 +192,9 @@ def dfs(_maze, start, goal):
 
     else:
       neighbors = get_valid_neighbors(_maze, current, visited)
-      fringe.extend(neighbors)
+      for neighbor in neighbors:
+        visited.append(neighbor)
+        fringe.append(neighbor)
 
   print('\nVisited:')
   print(visited)
@@ -224,7 +224,6 @@ def bfs(_maze, start, goal):
     current, s_path = fringe.pop(0)
 
     if current == goal:
-      visited.append(goal)
 
       # color shortest path
       for i in s_path:
@@ -234,6 +233,9 @@ def bfs(_maze, start, goal):
                             CELL_SIZE,
                             CELL_SIZE)
           pygame.draw.rect(screen, GREY, cell)
+          # animate path
+          pygame.display.update()
+          pygame.time.delay(30)
 
       print('\nVisited:')
       print(visited)
@@ -249,8 +251,11 @@ def bfs(_maze, start, goal):
 
     else:
       neighbors = get_valid_neighbors(_maze, current, visited)
-      for current in neighbors:
-        fringe.append((current, s_path + [current]))
+      print('Neighbors:')
+      print(neighbors)
+      for neighbor in neighbors:
+        visited.append(neighbor)
+        fringe.append((neighbor, s_path + [current]))
 
   print('\nVisited:')
   print(visited)
