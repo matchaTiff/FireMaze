@@ -1,5 +1,6 @@
 import pygame
 import random
+import queue
 import sys
 
 # colors
@@ -136,15 +137,19 @@ def get_valid_neighbors(_maze, current, visited):
   # left
   if row > 0 and (row - 1, col) not in visited and _maze[row - 1][col] != 1 and _maze[row - 1][col] != 2:
     neighbors.append((row - 1, col))
+    visited.append((row - 1, col))
   # right
   if row + 1 < dim and (row + 1, col) not in visited and _maze[row + 1][col] != 1 and _maze[row + 1][col] != 2:
     neighbors.append((row + 1, col))
+    visited.append((row + 1, col))
   # down
   if col > 0 and (row, col - 1) not in visited and _maze[row][col - 1] != 1 and _maze[row][col - 1] != 2:
     neighbors.append((row, col - 1))
+    visited.append((row, col - 1))
   # up
   if col + 1 < dim and (row, col + 1) not in visited and _maze[row][col + 1] != 1 and _maze[row][col + 1] != 2:
     neighbors.append((row, col + 1))
+    visited.append((row, col + 1))
 
   return neighbors
     
@@ -161,10 +166,11 @@ def dfs(_maze, start, goal):
 
   # fringe is a list stack
   fringe = [start]
+  visited.append(start)
+
   # while fringe is not empty
   while fringe:
     current = fringe.pop()
-    visited.append(current)
 
     # color visited cell except for start and goal
     if(current != start and current != goal):
@@ -175,7 +181,6 @@ def dfs(_maze, start, goal):
       pygame.draw.rect(screen, GREY, cell)
 
     if current == goal:
-      visited.append(goal)
 
       print('\nVisited:')
       print(visited)
