@@ -205,6 +205,62 @@ def dfs(_maze, start, goal):
   print('\nFAILED')
   return False
 
+def bfs(_maze, start, goal):
+  """
+  Runs bfs on the maze and determines the shortest path from start to goal
+  :param _maze: maze as a grid
+  :param start: starting cell
+  :param goal: goal cell
+  :return: shortest path
+  """
+  visited = []
+
+  fringe = [(start, [start])]
+  visited.append(start)
+
+  while fringe:
+
+    # get the first element from queue
+    current, s_path = fringe.pop(0)
+
+    if current == goal:
+      visited.append(goal)
+
+      # color shortest path
+      for i in s_path:
+        if(i != start and i != goal):
+          cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
+                            (MARGIN + CELL_SIZE) * i[0] + MARGIN,
+                            CELL_SIZE,
+                            CELL_SIZE)
+          pygame.draw.rect(screen, GREY, cell)
+
+      print('\nVisited:')
+      print(visited)
+
+      print('\nElements in fringe:')
+      print(fringe)
+
+      pygame.display.flip()
+      print('\nSUCCESS')
+      print('Shortest path:')
+      print(s_path + [goal])
+      return True
+
+    else:
+      neighbors = get_valid_neighbors(_maze, current, visited)
+      for current in neighbors:
+        fringe.append((current, s_path + [current]))
+
+  print('\nVisited:')
+  print(visited)
+
+  print('\nElements in fringe:')
+  print(fringe)
+
+  print('\nFAILED')
+  return False
+
 maze = get_maze()
 print(maze)
 
@@ -214,7 +270,7 @@ fired = start_fire(maze)
 print(f"Fire starts: {fired[1]}")
 show_maze(fired[0])
 
-dfs(maze, (0, 0), (dim-1, dim-1))
+bfs(maze, (0, 0), (dim-1, dim-1))
 
 # keep program running until user exits the window
 running = True
