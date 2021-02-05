@@ -16,7 +16,7 @@ pygame.display.set_caption("Fire Maze")
 screen.fill(BLACK)
 
 MARGIN = 1
-dim = 10
+dim = 4
 CELL_SIZE = WINDOW_SIZE[0] / dim - 1
 
 # initializes pygame
@@ -26,10 +26,9 @@ if sys.version_info[0] < 3:
     raise Exception("Python 3 is required for this program.")
 
 
-def get_maze(dim: int = 10, p: float = 0.1):
+def get_maze(p: float = 0.1):
     """
     Creates dim x dim grid with p probability blocks
-    :param dim: dimensions
     :param p: probability of a single space being blocked
     :return: maze as a grid/2 dimensional list
     """
@@ -39,10 +38,10 @@ def get_maze(dim: int = 10, p: float = 0.1):
         for column in range(dim):
             # choose if blocked or not via weights
             # 0 = safe, 1 = blocked
-            if random.choices([True, False], weights=(p, 1 - p), k=1)[0]:
-                grid[row].append(1)
-            else:
-                grid[row].append(0)
+            grid[row].append(random.choices([1, 0], weights=(p, 1 - p))[0])
+    # start and end must be free
+    grid[0][0] = 0
+    grid[dim - 1][dim - 1] = 0
     return grid
 
 
@@ -56,13 +55,13 @@ def start_fire(_maze: list):
     valid = False
 
     while not valid:
-        row = random.randint(0, dim-1)
-        col = random.randint(0, dim-1)
+        row = random.randint(0, dim - 1)
+        col = random.randint(0, dim - 1)
         # don't start fire on start block
         if row == 0 and col == 0:
             continue
         # don't start fire on end block
-        elif row == dim-1 and col == dim-1:
+        elif row == dim - 1 and col == dim - 1:
             continue
         # check if the coordinate is blocked
         # if yes, then still not valid
@@ -103,7 +102,7 @@ def show_maze(_maze: list):
                                    CELL_SIZE,
                                    CELL_SIZE)
                 pygame.draw.rect(screen, WHITE, cell)
-
+    """
     # color start cell
     cell = pygame.Rect((MARGIN + CELL_SIZE) * 0 + MARGIN,
                        (MARGIN + CELL_SIZE) * 0 + MARGIN,
@@ -117,88 +116,157 @@ def show_maze(_maze: list):
                        CELL_SIZE,
                        CELL_SIZE)
     pygame.draw.rect(screen, GREEN, cell)
-
+    """
     # update entire display so the rectangles are actually drawn on the screen
     pygame.display.flip()
 
+
 def get_valid_neighbors(_maze, current, visited):
-  """
+    """
   Get adjacent neighbors which are not an obstacle
   :param _maze: maze as a grid
   :param current: current cell
   :param visited: list of visited cell positions
   :return: list of neighbors
   """
-  neighbors = []
-  row = current[0]
-  col = current[1]
+    neighbors = []
+    row = current[0]
+    col = current[1]
 
-  # left
-  if row > 0 and (row - 1, col) not in visited and _maze[row - 1][col] != 1 and _maze[row - 1][col] != 2:
-    neighbors.append((row - 1, col))
-  # right
-  if row + 1 < dim and (row + 1, col) not in visited and _maze[row + 1][col] != 1 and _maze[row + 1][col] != 2:
-    neighbors.append((row + 1, col))
-  # down
-  if col > 0 and (row, col - 1) not in visited and _maze[row][col - 1] != 1 and _maze[row][col - 1] != 2:
-    neighbors.append((row, col - 1))
-  # up
-  if col + 1 < dim and (row, col + 1) not in visited and _maze[row][col + 1] != 1 and _maze[row][col + 1] != 2:
-    neighbors.append((row, col + 1))
+    # left
+    if row > 0 and (row - 1, col) not in visited and _maze[row - 1][col] != 1 and _maze[row - 1][col] != 2:
+        neighbors.append((row - 1, col))
+    # right
+    if row + 1 < dim and (row + 1, col) not in visited and _maze[row + 1][col] != 1 and _maze[row + 1][col] != 2:
+        neighbors.append((row + 1, col))
+    # down
+    if col > 0 and (row, col - 1) not in visited and _maze[row][col - 1] != 1 and _maze[row][col - 1] != 2:
+        neighbors.append((row, col - 1))
+    # up
+    if col + 1 < dim and (row, col + 1) not in visited and _maze[row][col + 1] != 1 and _maze[row][col + 1] != 2:
+        neighbors.append((row, col + 1))
 
-  return neighbors
-    
+    return neighbors
 
-def dfs_search(_maze, start, goal):
-  """
+
+def dfs(_maze, start, goal):
+    """
   Runs dfs on the maze and determines whether the goal is reachable
   :param _maze: maze as a grid
   :param start: starting cell
   :param goal: goal cell
   :return: true if reachable, false otherwise
   """
-  visited = []
+    visited = []
 
-  # fringe is a list stack
-  fringe = [start]
-  # while fringe is not empty
-  while fringe:
-    current = fringe.pop()
-    visited.append(current)
+    # fringe is a list stack
+    fringe = [start]
+    visited.append(start)
 
-    # color visited cell except for start and goal
-    if(current != start and current != goal):
-      cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN,
-                        (MARGIN + CELL_SIZE) * current[0] + MARGIN,
-                        CELL_SIZE,
-                        CELL_SIZE)
-      pygame.draw.rect(screen, GREY, cell)
+    # while fringe is not empty
+    while fringe:
+        current = fringe.pop()
 
-    if current == goal:
-      visited.append(goal)
+        # color visited cell except for start and goal
+        if (current != start and current != goal):
+            cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN,
+                               (MARGIN + CELL_SIZE) * current[0] + MARGIN,
+                               CELL_SIZE,
+                               CELL_SIZE)
+            pygame.draw.rect(screen, GREY, cell)
+            # animate path
+            pygame.display.update()
+            pygame.time.delay(30)
 
-      print('\nVisited:')
-      print(visited)
+        if current == goal:
 
-      print('\nElements in fringe:')
-      print(fringe)
+            print('\nVisited:')
+            print(visited)
 
-      pygame.display.flip()
-      print('\nSUCCESS')
-      return True
+            print('\nElements in fringe:')
+            print(fringe)
 
-    else:
-      neighbors = get_valid_neighbors(_maze, current, visited)
-      fringe.extend(neighbors)
+            pygame.display.flip()
+            print('\nSUCCESS')
+            return True
 
-  print('\nVisited:')
-  print(visited)
+        else:
+            neighbors = get_valid_neighbors(_maze, current, visited)
+            for neighbor in neighbors:
+                visited.append(neighbor)
+                fringe.append(neighbor)
 
-  print('\nElements in fringe:')
-  print(fringe)
+    print('\nVisited:')
+    print(visited)
 
-  print('\nFAILED')
-  return False
+    print('\nElements in fringe:')
+    print(fringe)
+
+    print('\nFAILED')
+    return False
+
+
+def bfs(_maze, start, goal):
+    """
+  Runs bfs on the maze and determines the shortest path from start to goal
+  :param _maze: maze as a grid
+  :param start: starting cell
+  :param goal: goal cell
+  :return: shortest path
+  """
+    visited = []
+
+    fringe = [(start, [start])]
+    visited.append(start)
+
+    while fringe:
+
+        # get the first element from queue
+        current, s_path = fringe.pop(0)
+
+        if current == goal:
+
+            # color shortest path
+            for i in s_path:
+                if (i != start and i != goal):
+                    cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
+                                       (MARGIN + CELL_SIZE) * i[0] + MARGIN,
+                                       CELL_SIZE,
+                                       CELL_SIZE)
+                    pygame.draw.rect(screen, GREY, cell)
+                    # animate path
+                    pygame.display.update()
+                    pygame.time.delay(30)
+
+            print('\nVisited:')
+            print(visited)
+
+            print('\nElements in fringe:')
+            print(fringe)
+
+            pygame.display.flip()
+            print('\nSUCCESS')
+            print('Shortest path:')
+            print(s_path + [goal])
+            return True
+
+        else:
+            neighbors = get_valid_neighbors(_maze, current, visited)
+            print('Neighbors:')
+            print(neighbors)
+            for neighbor in neighbors:
+                visited.append(neighbor)
+                fringe.append((neighbor, s_path + [current]))
+
+    print('\nVisited:')
+    print(visited)
+
+    print('\nElements in fringe:')
+    print(fringe)
+
+    print('\nFAILED')
+    return False
+
 
 maze = get_maze()
 print(maze)
@@ -209,7 +277,7 @@ fired = start_fire(maze)
 print(f"Fire starts: {fired[1]}")
 show_maze(fired[0])
 
-dfs_search(maze, (0, 0), (dim-1, dim-1))
+bfs(maze, (0, 0), (dim - 1, dim - 1))
 
 # keep program running until user exits the window
 running = True
