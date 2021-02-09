@@ -149,6 +149,16 @@ def get_valid_neighbors(_maze, current, visited):
     return neighbors
 
 
+def get_distance(start, goal):
+    """
+    Returns the distance between two spots on a grid.
+    :param start:
+    :param goal:
+    :return:
+    """
+    return (goal[0] - start[0]) + (goal[1] - start[1])
+
+
 def dfs(_maze, start, goal):
     """
   Runs dfs on the maze and determines whether the goal is reachable
@@ -229,6 +239,137 @@ def bfs(_maze, start, goal):
             # color shortest path
             for i in s_path:
                 if (i != start and i != goal):
+                    cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
+                                       (MARGIN + CELL_SIZE) * i[0] + MARGIN,
+                                       CELL_SIZE,
+                                       CELL_SIZE)
+                    pygame.draw.rect(screen, GREY, cell)
+                    # animate path
+                    pygame.display.update()
+                    pygame.time.delay(30)
+
+            print('\nVisited:')
+            print(visited)
+
+            print('\nElements in fringe:')
+            print(fringe)
+
+            pygame.display.flip()
+            print('\nSUCCESS')
+            print('Shortest path:')
+            print(s_path + [goal])
+            return True
+
+        else:
+            neighbors = get_valid_neighbors(_maze, current, visited)
+            print('Neighbors:')
+            print(neighbors)
+            for neighbor in neighbors:
+                visited.append(neighbor)
+                fringe.append((neighbor, s_path + [current]))
+
+    print('\nVisited:')
+    print(visited)
+
+    print('\nElements in fringe:')
+    print(fringe)
+
+    print('\nFAILED')
+    return False
+
+
+class Node:
+    def __init__(self, coords, parent, distance, weight):
+        self.coords = coords
+        self.parent = parent
+        self.distance = distance
+        self.weight = weight
+
+
+def a_star(_maze, goal, parent, fringe, visited):
+    # A* keeps a priority queue fringe
+
+    # each node keeps a record if its parent and current weight
+    # and its neighbors are inserted into the fringe at its distance+est
+
+    current = fringe.pop(0)
+
+    # the first time the goal node is popped with the smallest weight
+    # is when the shortest path is found
+    if current is goal:
+        if len(fringe) == 0 or fringe.pop(0).weight <= current.weight:
+            # rebuild the shortest path
+            s_path = []
+            c = current.parent
+            while c is not None:
+                s_path.insert(0, c.coords)
+                c = c.parent
+
+            # color shortest path
+            for i in s_path:
+                if i != (0, [0]) and i != goal:
+                    cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
+                                       (MARGIN + CELL_SIZE) * i[0] + MARGIN,
+                                       CELL_SIZE,
+                                       CELL_SIZE)
+                    pygame.draw.rect(screen, GREY, cell)
+                    # animate path
+                    pygame.display.update()
+                    pygame.time.delay(30)
+
+            print('\nVisited:')
+            print(visited)
+
+            print('\nElements in fringe:')
+            print(fringe)
+
+            pygame.display.flip()
+            print('\nSUCCESS')
+            print('Shortest path:')
+            print(s_path + [goal])
+            return True
+        else:
+            pass
+
+    pass
+
+
+def a_star_alt(_maze, start, goal):
+    """
+    Runs A* algorithm on a maze.
+    :param _maze:
+    :param start:
+    :param goal:
+    :return:
+    """
+    visited = []
+
+    fringe = [{"node": (start, [start]), "parent": (None, [None]), "traveled": 0, "remaining": 2 * dim - 2}]
+    visited.append(start)
+
+    while fringe:
+
+        # sort the fringe by least to greatest
+        fringe.sort()
+        # get the first element from queue
+        current = fringe.pop(0)
+
+        # A* found the shortest path when the goal node's "weight" is the smallest
+
+        if current == goal:
+
+            # rebuild the shortest path
+            s_path = []
+            c = current['parent']
+            while c['node'] is not None:
+                s_path.insert(0, c['node'])
+                for item in visited:
+                    if item['node'] == c['parent']:
+                        c = item
+
+            # color shortest path
+            for i in s_path:
+                if i != start and i != goal:
                     cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
                                        (MARGIN + CELL_SIZE) * i[0] + MARGIN,
                                        CELL_SIZE,
