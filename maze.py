@@ -278,6 +278,10 @@ def bfs(_maze, start, goal):
     return False
 
 
+def get_distance_from_goal(pos):
+    return get_distance(pos, (dim-1, dim-1))
+
+
 class Node:
     def __init__(self, coords, parent, distance, weight):
         self.coords = coords
@@ -286,52 +290,57 @@ class Node:
         self.weight = weight
 
 
-def a_star(_maze, goal, parent, fringe, visited):
+def a_star(_maze, goal, fringe, visited):
+    start = Node((0, [0]), None, 0, get_distance_from_goal((0, 0)))
+    fringe.append(start)
     # A* keeps a priority queue fringe
-
     # each node keeps a record if its parent and current weight
     # and its neighbors are inserted into the fringe at its distance+est
+    while len(fringe) > 0:
+        fringe.sort()
+        current = fringe.pop(0)
 
-    current = fringe.pop(0)
+        # the first time the goal node is popped with the smallest weight
+        # is when the shortest path is found
+        if current is goal and (len(fringe) == 0 or fringe.pop(0).weight <= current.weight):
+                # rebuild the shortest path
+                s_path = []
+                c = current.parent
+                while c is not None:
+                    s_path.insert(0, c.coords)
+                    c = c.parent
 
-    # the first time the goal node is popped with the smallest weight
-    # is when the shortest path is found
-    if current is goal:
-        if len(fringe) == 0 or fringe.pop(0).weight <= current.weight:
-            # rebuild the shortest path
-            s_path = []
-            c = current.parent
-            while c is not None:
-                s_path.insert(0, c.coords)
-                c = c.parent
+                # color shortest path
+                for i in s_path:
+                    if i != (0, [0]) and i != goal:
+                        cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
+                                           (MARGIN + CELL_SIZE) * i[0] + MARGIN,
+                                           CELL_SIZE,
+                                           CELL_SIZE)
+                        pygame.draw.rect(screen, GREY, cell)
+                        # animate path
+                        pygame.display.update()
+                        pygame.time.delay(30)
 
-            # color shortest path
-            for i in s_path:
-                if i != (0, [0]) and i != goal:
-                    cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
-                                       (MARGIN + CELL_SIZE) * i[0] + MARGIN,
-                                       CELL_SIZE,
-                                       CELL_SIZE)
-                    pygame.draw.rect(screen, GREY, cell)
-                    # animate path
-                    pygame.display.update()
-                    pygame.time.delay(30)
+                print('\nVisited:')
+                print(visited)
 
-            print('\nVisited:')
-            print(visited)
+                print('\nElements in fringe:')
+                print(fringe)
 
-            print('\nElements in fringe:')
-            print(fringe)
-
-            pygame.display.flip()
-            print('\nSUCCESS')
-            print('Shortest path:')
-            print(s_path + [goal])
-            return True
+                pygame.display.flip()
+                print('\nSUCCESS')
+                print('Shortest path:')
+                print(s_path + [goal])
+                return True
+        # insert the unvisited nodes of current into the queue
         else:
-            pass
-
-    pass
+            neighbors = get_valid_neighbors(_maze, current, visited)
+            for n in neighbors:
+                node = Node(n, current, current.distance+1, current.distance+1 + get_distance_from_goal((n[0], n[1][0])))
+                fringe.append(node)
+            visited.append(current.coords)
+    return False
 
 
 def a_star_alt(_maze, start, goal):
