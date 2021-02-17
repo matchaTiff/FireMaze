@@ -1,6 +1,8 @@
 import pygame
 import random
 import sys
+import time
+import collections
 
 # colors
 BLACK = (50, 50, 50)
@@ -16,7 +18,7 @@ pygame.display.set_caption("Fire Maze")
 screen.fill(BLACK)
 
 MARGIN = 1
-dim = 4
+dim = 200
 CELL_SIZE = WINDOW_SIZE[0] / dim - 1
 
 # initializes pygame
@@ -26,7 +28,7 @@ if sys.version_info[0] < 3:
     raise Exception("Python 3 is required for this program.")
 
 
-def get_maze(p: float = 0.1):
+def get_maze(p: float = 0.3):
     """
     Creates dim x dim grid with p probability blocks
     :param p: probability of a single space being blocked
@@ -102,7 +104,7 @@ def show_maze(_maze: list):
                                    CELL_SIZE,
                                    CELL_SIZE)
                 pygame.draw.rect(screen, WHITE, cell)
-    """
+
     # color start cell
     cell = pygame.Rect((MARGIN + CELL_SIZE) * 0 + MARGIN,
                        (MARGIN + CELL_SIZE) * 0 + MARGIN,
@@ -116,7 +118,7 @@ def show_maze(_maze: list):
                        CELL_SIZE,
                        CELL_SIZE)
     pygame.draw.rect(screen, GREEN, cell)
-    """
+    
     # update entire display so the rectangles are actually drawn on the screen
     pygame.display.flip()
 
@@ -129,22 +131,22 @@ def get_valid_neighbors(_maze, current, visited):
   :param visited: list of visited cell positions
   :return: list of neighbors
   """
-    neighbors = []
+    neighbors = set()
     row = current[0]
     col = current[1]
 
     # left
     if row > 0 and (row - 1, col) not in visited and _maze[row - 1][col] != 1 and _maze[row - 1][col] != 2:
-        neighbors.append((row - 1, col))
+        neighbors.add((row - 1, col))
     # right
     if row + 1 < dim and (row + 1, col) not in visited and _maze[row + 1][col] != 1 and _maze[row + 1][col] != 2:
-        neighbors.append((row + 1, col))
+        neighbors.add((row + 1, col))
     # down
     if col > 0 and (row, col - 1) not in visited and _maze[row][col - 1] != 1 and _maze[row][col - 1] != 2:
-        neighbors.append((row, col - 1))
+        neighbors.add((row, col - 1))
     # up
     if col + 1 < dim and (row, col + 1) not in visited and _maze[row][col + 1] != 1 and _maze[row][col + 1] != 2:
-        neighbors.append((row, col + 1))
+        neighbors.add((row, col + 1))
 
     return neighbors
 
@@ -167,11 +169,10 @@ def dfs(_maze, start, goal):
   :param goal: goal cell
   :return: true if reachable, false otherwise
   """
-    visited = []
-
-    # fringe is a list stack
+    # fringe is a stack
     fringe = [start]
-    visited.append(start)
+
+    visited = set(start)
 
     # while fringe is not empty
     while fringe:
@@ -202,15 +203,16 @@ def dfs(_maze, start, goal):
 
         else:
             neighbors = get_valid_neighbors(_maze, current, visited)
-            for neighbor in neighbors:
-                visited.append(neighbor)
-                fringe.append(neighbor)
+            # update() add items from other iterables.
+            visited.update(neighbors)
+            # adds list elements to fringe
+            fringe.extend(neighbors)
 
-    print('\nVisited:')
-    print(visited)
+    # print('\nVisited:')
+    # print(visited)
 
-    print('\nElements in fringe:')
-    print(fringe)
+    # print('\nElements in fringe:')
+    # print(fringe)
 
     print('\nFAILED')
     return False
@@ -224,29 +226,27 @@ def bfs(_maze, start, goal):
   :param goal: goal cell
   :return: shortest path
   """
-    visited = []
-
-    fringe = [(start, [start])]
-    visited.append(start)
+    visited = set(start)
+    fringe = collections.deque([start])
 
     while fringe:
 
         # get the first element from queue
-        current, s_path = fringe.pop(0)
+        current = fringe.popleft()
 
         if current == goal:
 
             # color shortest path
-            for i in s_path:
-                if (i != start and i != goal):
-                    cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
-                                       (MARGIN + CELL_SIZE) * i[0] + MARGIN,
-                                       CELL_SIZE,
-                                       CELL_SIZE)
-                    pygame.draw.rect(screen, GREY, cell)
-                    # animate path
-                    pygame.display.update()
-                    pygame.time.delay(30)
+            # for i in s_path:
+            #     if (i != start and i != goal):
+            #         cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
+            #                            (MARGIN + CELL_SIZE) * i[0] + MARGIN,
+            #                            CELL_SIZE,
+            #                            CELL_SIZE)
+            #         pygame.draw.rect(screen, GREY, cell)
+            #         # animate path
+            #         pygame.display.update()
+            #         pygame.time.delay(30)
 
             print('\nVisited:')
             print(visited)
@@ -254,25 +254,24 @@ def bfs(_maze, start, goal):
             print('\nElements in fringe:')
             print(fringe)
 
-            pygame.display.flip()
+            # pygame.display.flip()
             print('\nSUCCESS')
-            print('Shortest path:')
-            print(s_path + [goal])
+            # print('Shortest path:')
+            # print(s_path + [goal])
             return True
 
         else:
             neighbors = get_valid_neighbors(_maze, current, visited)
-            print('Neighbors:')
-            print(neighbors)
-            for neighbor in neighbors:
-                visited.append(neighbor)
-                fringe.append((neighbor, s_path + [current]))
+            # print('Neighbors:')
+            # print(neighbors)
+            visited.update(neighbors)
+            fringe.extend(neighbors)
 
-    print('\nVisited:')
-    print(visited)
+    # print('\nVisited:')
+    # print(visited)
 
-    print('\nElements in fringe:')
-    print(fringe)
+    # print('\nElements in fringe:')
+    # print(fringe)
 
     print('\nFAILED')
     return False
@@ -402,8 +401,8 @@ def a_star_alt(_maze, start, goal):
 
         else:
             neighbors = get_valid_neighbors(_maze, current, visited)
-            print('Neighbors:')
-            print(neighbors)
+            # print('Neighbors:')
+            # print(neighbors)
             for neighbor in neighbors:
                 visited.append(neighbor)
                 fringe.append((neighbor, s_path + [current]))
@@ -419,15 +418,15 @@ def a_star_alt(_maze, start, goal):
 
 
 maze = get_maze()
-print(maze)
-
+# print(maze)
 show_maze(maze)
+# fired = start_fire(maze)
+# print(f"Fire starts: {fired[1]}")
+# show_maze(fired[0])
 
-fired = start_fire(maze)
-print(f"Fire starts: {fired[1]}")
-show_maze(fired[0])
-
-bfs(maze, (0, 0), (dim - 1, dim - 1))
+start_time = time.time()
+dfs(maze, (0, 0), (dim - 1, dim - 1))
+print("%s seconds" % (time.time() - start_time))
 
 # keep program running until user exits the window
 running = True
