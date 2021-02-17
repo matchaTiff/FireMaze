@@ -279,7 +279,7 @@ def bfs(_maze, start, goal):
 
 
 def get_distance_from_goal(pos):
-    return get_distance(pos, (dim-1, dim-1))
+    return get_distance(pos, (dim - 1, dim - 1))
 
 
 class Node:
@@ -290,95 +290,30 @@ class Node:
         self.weight = weight
 
 
-def a_star(_maze, goal, fringe, visited):
-    start = Node((0, [0]), None, 0, get_distance_from_goal((0, 0)))
-    fringe.append(start)
+def a_star(_maze, start, goal):
+    fringe = [Node(start, None, 0, get_distance_from_goal(start))]
+    visited = []
     # A* keeps a priority queue fringe
     # each node keeps a record if its parent and current weight
     # and its neighbors are inserted into the fringe at its distance+est
     while len(fringe) > 0:
-        fringe.sort()
+        sorted(fringe, key=lambda x: x.weight)  # Sort by weight
         current = fringe.pop(0)
+        print(f"\tcurrent: {current.coords}\tgoal: {goal}")
 
         # the first time the goal node is popped with the smallest weight
         # is when the shortest path is found
-        if current is goal and (len(fringe) == 0 or fringe.pop(0).weight <= current.weight):
-                # rebuild the shortest path
-                s_path = []
-                c = current.parent
-                while c is not None:
-                    s_path.insert(0, c.coords)
-                    c = c.parent
-
-                # color shortest path
-                for i in s_path:
-                    if i != (0, [0]) and i != goal:
-                        cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
-                                           (MARGIN + CELL_SIZE) * i[0] + MARGIN,
-                                           CELL_SIZE,
-                                           CELL_SIZE)
-                        pygame.draw.rect(screen, GREY, cell)
-                        # animate path
-                        pygame.display.update()
-                        pygame.time.delay(30)
-
-                print('\nVisited:')
-                print(visited)
-
-                print('\nElements in fringe:')
-                print(fringe)
-
-                pygame.display.flip()
-                print('\nSUCCESS')
-                print('Shortest path:')
-                print(s_path + [goal])
-                return True
-        # insert the unvisited nodes of current into the queue
-        else:
-            neighbors = get_valid_neighbors(_maze, current, visited)
-            for n in neighbors:
-                node = Node(n, current, current.distance+1, current.distance+1 + get_distance_from_goal((n[0], n[1][0])))
-                fringe.append(node)
-            visited.append(current.coords)
-    return False
-
-
-def a_star_alt(_maze, start, goal):
-    """
-    Runs A* algorithm on a maze.
-    :param _maze:
-    :param start:
-    :param goal:
-    :return:
-    """
-    visited = []
-
-    fringe = [{"node": (start, [start]), "parent": (None, [None]), "traveled": 0, "remaining": 2 * dim - 2}]
-    visited.append(start)
-
-    while fringe:
-
-        # sort the fringe by least to greatest
-        fringe.sort()
-        # get the first element from queue
-        current = fringe.pop(0)
-
-        # A* found the shortest path when the goal node's "weight" is the smallest
-
-        if current == goal:
-
+        if current.coords == goal and (len(fringe) == 0 or fringe[0].weight <= current.weight):
             # rebuild the shortest path
             s_path = []
-            c = current['parent']
-            while c['node'] is not None:
-                s_path.insert(0, c['node'])
-                for item in visited:
-                    if item['node'] == c['parent']:
-                        c = item
+            c = current.parent
+            while c is not None:
+                s_path.insert(0, c.coords)
+                c = c.parent
 
             # color shortest path
             for i in s_path:
-                if i != start and i != goal:
+                if i != (0, [0]) and i != goal:
                     cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
                                        (MARGIN + CELL_SIZE) * i[0] + MARGIN,
                                        CELL_SIZE,
@@ -399,22 +334,14 @@ def a_star_alt(_maze, start, goal):
             print('Shortest path:')
             print(s_path + [goal])
             return True
-
+        # insert the unvisited nodes of current into the queue
         else:
-            neighbors = get_valid_neighbors(_maze, current, visited)
-            print('Neighbors:')
-            print(neighbors)
-            for neighbor in neighbors:
-                visited.append(neighbor)
-                fringe.append((neighbor, s_path + [current]))
-
-    print('\nVisited:')
-    print(visited)
-
-    print('\nElements in fringe:')
-    print(fringe)
-
-    print('\nFAILED')
+            neighbors = get_valid_neighbors(_maze, current.coords, visited)
+            for n in neighbors:
+                node = Node(n, current, current.distance + 1,
+                            current.distance + 1 + get_distance_from_goal((n[0], n[1])))
+                fringe.append(node)
+            visited.append(current.coords)
     return False
 
 
@@ -427,7 +354,8 @@ fired = start_fire(maze)
 print(f"Fire starts: {fired[1]}")
 show_maze(fired[0])
 
-bfs(maze, (0, 0), (dim - 1, dim - 1))
+# bfs(maze, (0, 0), (dim - 1, dim - 1))
+a_star(maze, (0,0), (dim - 1, dim - 1))
 
 # keep program running until user exits the window
 running = True
