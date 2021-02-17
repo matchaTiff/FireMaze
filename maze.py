@@ -298,13 +298,13 @@ def a_star(_maze, goal):
     # each node keeps a record if its parent and current weight
     # and its neighbors are inserted into the fringe at its distance+est
     while len(fringe) > 0:
-        fringe.sort()
         sorted(fringe, key=lambda x: x.weight)  # Sort by weight
         current = fringe.pop(0)
+        print(f"\tcurrent: {current.coords}\tgoal: {goal}")
 
         # the first time the goal node is popped with the smallest weight
         # is when the shortest path is found
-        if current == goal and (len(fringe) == 0 or fringe[0].weight <= current.weight):
+        if current.coords == goal and (len(fringe) == 0 or fringe[0].weight <= current.weight):
             # rebuild the shortest path
             s_path = []
             c = current.parent
@@ -355,7 +355,8 @@ fired = start_fire(maze)
 print(f"Fire starts: {fired[1]}")
 show_maze(fired[0])
 
-bfs(maze, (0, 0), (dim - 1, dim - 1))
+# bfs(maze, (0, 0), (dim - 1, dim - 1))
+a_star(maze, (dim - 1, dim - 1))
 
 # keep program running until user exits the window
 running = True
