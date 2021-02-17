@@ -290,9 +290,8 @@ class Node:
         self.weight = weight
 
 
-def a_star(_maze, goal):
-    start = Node((0, 0), None, 0, get_distance_from_goal((0, 0)))
-    fringe = [start]
+def a_star(_maze, start, goal):
+    fringe = [Node(start, None, 0, get_distance_from_goal(start))]
     visited = []
     # A* keeps a priority queue fringe
     # each node keeps a record if its parent and current weight
@@ -356,7 +355,7 @@ print(f"Fire starts: {fired[1]}")
 show_maze(fired[0])
 
 # bfs(maze, (0, 0), (dim - 1, dim - 1))
-a_star(maze, (dim - 1, dim - 1))
+a_star(maze, (0,0), (dim - 1, dim - 1))
 
 # keep program running until user exits the window
 running = True
