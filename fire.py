@@ -75,6 +75,7 @@ def start_fire(_maze: list):
             _maze[row][col] = 2
             return _maze, (row, col)
 
+
 def fire_get_neighbors(_maze, current):
     neighbors = set()
     row = current[0]
@@ -94,6 +95,7 @@ def fire_get_neighbors(_maze, current):
         neighbors.add((row, col + 1))
 
     return neighbors
+
 
 def count_fire(_maze, current):
     row = current[0]
@@ -115,7 +117,7 @@ def count_fire(_maze, current):
         fire_count += 1
 
     return fire_count
-    
+
 
 def advance_fire_one_step(_maze, q):
     maze_copy = _maze
@@ -128,7 +130,7 @@ def advance_fire_one_step(_maze, q):
         neighbors = fire_get_neighbors(_maze, (i[0], i[1]))
         for neighbor in neighbors:
             k = count_fire(_maze, neighbor)
-            prob = 1 - ((1 - q)**k)
+            prob = 1 - ((1 - q) ** k)
             # mark cell on fire given probability
             maze_copy[neighbor[0]][neighbor[1]] = (random.choices([2, 0], weights=(prob, 1 - prob))[0])
             # color cell red for fire
@@ -137,15 +139,17 @@ def advance_fire_one_step(_maze, q):
     # print(fire_locs)
     return maze_copy
 
+
 def color_fire(_maze: list, current):
     row = current[0]
     col = current[1]
     if _maze[row][col] == 2:
-            cell = pygame.Rect((MARGIN + CELL_SIZE) * col + MARGIN,
-                                (MARGIN + CELL_SIZE) * row + MARGIN,
-                                CELL_SIZE,
-                                CELL_SIZE)
-            pygame.draw.rect(screen, RED, cell)
+        cell = pygame.Rect((MARGIN + CELL_SIZE) * col + MARGIN,
+                           (MARGIN + CELL_SIZE) * row + MARGIN,
+                           CELL_SIZE,
+                           CELL_SIZE)
+        pygame.draw.rect(screen, RED, cell)
+
 
 def show_maze(_maze: list):
     """
@@ -190,7 +194,7 @@ def show_maze(_maze: list):
                        CELL_SIZE,
                        CELL_SIZE)
     pygame.draw.rect(screen, GREEN, cell)
-    
+
     # update entire display so the rectangles are actually drawn on the screen
     pygame.display.flip()
 
@@ -223,6 +227,7 @@ def get_neighbors_1(_maze, current, visited):
 
     return neighbors
 
+
 # for strategy 2
 def get_neighbors_2(_maze, current, visited):
     """
@@ -251,20 +256,64 @@ def get_neighbors_2(_maze, current, visited):
 
     return neighbors
 
+
+def is_next_to_fire(_maze, current):
+    row = current[0]
+    col = current[1]
+
+    # left
+    if row > 0 and _maze[row - 1][col] == 2:
+        return True
+    # right
+    if row + 1 < dim and _maze[row + 1][col] == 2:
+        return True
+    # down
+    if col > 0 and _maze[row][col - 1] == 2:
+        return True
+    # up
+    if col + 1 < dim and _maze[row][col + 1] == 2:
+        return True
+
+    return False
+
+
+def get_neighbors_3(_maze, current, visited):
+    """
+    Get adjacent neighbors that are not blocked, fire, or next to fire.
+    :param _maze:
+    :param current:
+    :param visited:
+    :return:
+    """
+
+    neighbors = set()
+    row = current[0]
+    col = current[1]
+
+    neighbors = get_neighbors_2(_maze, current, visited)
+    final = set()
+    for n in neighbors:
+        if not is_next_to_fire(_maze, n):
+            final.add(n)
+
+    return final
+
+
 def color_s_path(current, s_path):
     # color shortest path
     for i in s_path:
         if (i != (0, 0) and i != (dim - 1, dim - 1)):
             cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
-                            (MARGIN + CELL_SIZE) * i[0] + MARGIN,
-                            CELL_SIZE,
-                            CELL_SIZE)
+                               (MARGIN + CELL_SIZE) * i[0] + MARGIN,
+                               CELL_SIZE,
+                               CELL_SIZE)
             pygame.draw.rect(screen, GREEN, cell)
             # animate path
             pygame.display.update()
             pygame.time.delay(30)
 
     pygame.display.flip()
+
 
 # for strategy 1
 def bfs_1(_maze, start, goal):
@@ -283,7 +332,8 @@ def bfs_1(_maze, start, goal):
         current, s_path = fringe.popleft()
 
         # color current cell
-        cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN, (MARGIN + CELL_SIZE) * current[0] + MARGIN, CELL_SIZE, CELL_SIZE)
+        cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN, (MARGIN + CELL_SIZE) * current[0] + MARGIN,
+                           CELL_SIZE, CELL_SIZE)
         pygame.draw.rect(screen, GREY, cell)
         # animate path
         pygame.display.update()
@@ -315,6 +365,7 @@ def bfs_1(_maze, start, goal):
     print('\nFAILED')
     return False
 
+
 # for strategy 2
 def bfs_2(_maze, start, goal):
     """
@@ -333,7 +384,8 @@ def bfs_2(_maze, start, goal):
         current, s_path = fringe.popleft()
 
         # color current cell
-        cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN, (MARGIN + CELL_SIZE) * current[0] + MARGIN, CELL_SIZE, CELL_SIZE)
+        cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN, (MARGIN + CELL_SIZE) * current[0] + MARGIN,
+                           CELL_SIZE, CELL_SIZE)
         pygame.draw.rect(screen, GREY, cell)
         # animate path
         pygame.display.update()
@@ -369,10 +421,69 @@ def bfs_2(_maze, start, goal):
     print('\nFAILED')
     return False
 
+
 # strategy 3
-def dfs_3(_maze, start, goal):
-    
+def bfs_3(_maze, start, goal):
+    """
+  Runs bfs on the maze and determines the shortest path from start to goal
+  :param _maze: maze as a grid
+  :param start: starting cell
+  :param goal: goal cell
+  :return: shortest path
+  """
+    visited = set(start)
+    fringe = collections.deque([(start, [])])
+    round = 0
+
+    while fringe:
+        round += 1
+        print(f"\t\tROUND {round}")
+        print(f"\tfringe: {fringe}\n\tvisited: {visited}")
+
+        # get the first element from queue
+        current, s_path = fringe.popleft()
+
+        # color current cell
+        cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN, (MARGIN + CELL_SIZE) * current[0] + MARGIN,
+                           CELL_SIZE, CELL_SIZE)
+        pygame.draw.rect(screen, GREY, cell)
+        # animate path
+        pygame.display.update()
+        pygame.time.delay(40)
+
+        # make fire spread after each move
+        advance_fire_one_step(_maze, 0.1)
+        pygame.time.delay(40)
+
+        if current == goal:
+
+            # color visited cell except for start and goal
+            color_s_path(current, s_path)
+
+            # print('\nVisited:')
+            # print(visited)
+
+            # print('\nElements in fringe:')
+            # print(fringe)
+
+            print('\nSUCCESS')
+            print('Shortest path:')
+            print(s_path + [goal])
+            return True
+
+        else:
+            neighbors = get_neighbors_3(_maze, current, visited)
+            if len(neighbors) < 1:
+                break
+            for neighbor in neighbors:
+                visited.add(neighbor)
+                fringe.append((neighbor, s_path + [current]))
+
+    color_s_path(current, s_path)
+    print('\nFAILED')
     return False
+
+
 
 maze = get_maze()
 
@@ -389,10 +500,10 @@ maze = get_maze()
 # bfs_2(maze, (0, 0), (dim - 1, dim - 1))
 
 # Strategy 3
-# fired = start_fire(maze)
-# print(f"Fire starts: {fired[1]}")
-# show_maze(maze)
-# bfs_3(maze, (0, 0), (dim - 1, dim - 1))
+fired = start_fire(maze)
+print(f"Fire starts: {fired[1]}")
+show_maze(maze)
+bfs_3(maze, (0, 0), (dim - 1, dim - 1))
 
 print(maze)
 
