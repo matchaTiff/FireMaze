@@ -22,7 +22,7 @@ pygame.display.set_caption("Fire Maze")
 screen.fill(BLACK)
 
 MARGIN = 1
-dim = 5
+dim = 50
 CELL_SIZE = WINDOW_SIZE[0] / dim - 1
 
 # initializes pygame
@@ -313,12 +313,12 @@ def a_star(_maze, start, goal):
     f_score = {start:h(start, goal)}
     fringe = []
 
-    heappush(fringe, (start, f_score[start]))
+    heappush(fringe, (f_score[start], start))
     
     # while fringe is not empty
     while fringe:
         # get element with the lowest f_score
-        current = heappop(fringe)[0]
+        current = heappop(fringe)[1]
         visited.add(current)
 
         if current == goal:
@@ -345,14 +345,14 @@ def a_star(_maze, start, goal):
             # start -> neighbor through current
             tentative_gScore = g_score[current[0]][current[1]].get(current) + h(current, neighbor)
 
-            # better path
+            # check for better path
             if tentative_gScore < g_score[neighbor[0]][neighbor[1]].get(neighbor):
                 parent[neighbor] = current
                 g_score[neighbor[0]][neighbor[1]] = {neighbor:tentative_gScore}
 
                 f_score[neighbor] = tentative_gScore + h(neighbor, goal)
                 visited.add(neighbor)
-                heappush(fringe, (neighbor, f_score[neighbor]))
+                heappush(fringe, (f_score[neighbor], neighbor))
 
     print('\nFAILED')
     return False
