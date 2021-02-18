@@ -3,6 +3,10 @@ import random
 import sys
 import time
 import collections
+import numpy as np
+from heapq import heappop, heappush
+
+from pygame import color
 
 # colors
 BLACK = (50, 50, 50)
@@ -18,7 +22,7 @@ pygame.display.set_caption("Fire Maze")
 screen.fill(BLACK)
 
 MARGIN = 1
-dim = 200
+dim = 5
 CELL_SIZE = WINDOW_SIZE[0] / dim - 1
 
 # initializes pygame
@@ -28,7 +32,7 @@ if sys.version_info[0] < 3:
     raise Exception("Python 3 is required for this program.")
 
 
-def get_maze(p: float = 0.3):
+def get_maze(p: float = 0.1):
     """
     Creates dim x dim grid with p probability blocks
     :param p: probability of a single space being blocked
@@ -122,6 +126,20 @@ def show_maze(_maze: list):
     # update entire display so the rectangles are actually drawn on the screen
     pygame.display.flip()
 
+def color_s_path(current, s_path):
+    # color shortest path
+    for i in s_path:
+        if (i != (0, 0) and i != (dim - 1, dim - 1)):
+            cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
+                            (MARGIN + CELL_SIZE) * i[0] + MARGIN,
+                            CELL_SIZE,
+                            CELL_SIZE)
+            pygame.draw.rect(screen, GREEN, cell)
+            # animate path
+            pygame.display.update()
+            pygame.time.delay(30)
+
+    pygame.display.flip()
 
 def get_valid_neighbors(_maze, current, visited):
     """
@@ -151,16 +169,6 @@ def get_valid_neighbors(_maze, current, visited):
     return neighbors
 
 
-def get_distance(start, goal):
-    """
-    Returns the distance between two spots on a grid.
-    :param start:
-    :param goal:
-    :return:
-    """
-    return (goal[0] - start[0]) + (goal[1] - start[1])
-
-
 def dfs(_maze, start, goal):
     """
   Runs dfs on the maze and determines whether the goal is reachable
@@ -179,25 +187,25 @@ def dfs(_maze, start, goal):
         current = fringe.pop()
 
         # color visited cell except for start and goal
-        if (current != start and current != goal):
-            cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN,
-                               (MARGIN + CELL_SIZE) * current[0] + MARGIN,
-                               CELL_SIZE,
-                               CELL_SIZE)
-            pygame.draw.rect(screen, GREY, cell)
-            # animate path
-            pygame.display.update()
-            pygame.time.delay(30)
+        # if (current != start and current != goal):
+        #     cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN,
+        #                        (MARGIN + CELL_SIZE) * current[0] + MARGIN,
+        #                        CELL_SIZE,
+        #                        CELL_SIZE)
+        #     pygame.draw.rect(screen, GREY, cell)
+        #     # animate path
+        #     pygame.display.update()
+        #     pygame.time.delay(30)
 
         if current == goal:
 
-            print('\nVisited:')
-            print(visited)
+            # print('\nVisited:')
+            # print(visited)
 
-            print('\nElements in fringe:')
-            print(fringe)
+            # print('\nElements in fringe:')
+            # print(fringe)
 
-            pygame.display.flip()
+            # pygame.display.flip()
             print('\nSUCCESS')
             return True
 
@@ -227,34 +235,33 @@ def bfs(_maze, start, goal):
   :return: shortest path
   """
     visited = set(start)
-    fringe = collections.deque([start])
+    fringe = collections.deque([(start, [])])
 
     while fringe:
 
         # get the first element from queue
-        current = fringe.popleft()
+        current, s_path = fringe.popleft()
 
         if current == goal:
 
-            # color shortest path
-            # for i in s_path:
-            #     if (i != start and i != goal):
-            #         cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
-            #                            (MARGIN + CELL_SIZE) * i[0] + MARGIN,
-            #                            CELL_SIZE,
-            #                            CELL_SIZE)
-            #         pygame.draw.rect(screen, GREY, cell)
-            #         # animate path
-            #         pygame.display.update()
-            #         pygame.time.delay(30)
+            # color visited cell except for start and goal
+            if (current != start and current != goal):
+                cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN,
+                                   (MARGIN + CELL_SIZE) * current[0] + MARGIN,
+                                   CELL_SIZE,
+                                   CELL_SIZE)
+                pygame.draw.rect(screen, GREEN, cell)
+                # animate path
+                pygame.display.update()
+                pygame.time.delay(30)
 
-            print('\nVisited:')
-            print(visited)
+            # print('\nVisited:')
+            # print(visited)
 
-            print('\nElements in fringe:')
-            print(fringe)
+            # print('\nElements in fringe:')
+            # print(fringe)
 
-            # pygame.display.flip()
+            pygame.display.flip()
             print('\nSUCCESS')
             # print('Shortest path:')
             # print(s_path + [goal])
@@ -262,11 +269,9 @@ def bfs(_maze, start, goal):
 
         else:
             neighbors = get_valid_neighbors(_maze, current, visited)
-            # print('Neighbors:')
-            # print(neighbors)
-            visited.update(neighbors)
-            fringe.extend(neighbors)
-
+            for neighbor in neighbors:
+                visited.add(neighbor)
+                fringe.append((neighbor, s_path + [current]))
     # print('\nVisited:')
     # print(visited)
 
@@ -277,86 +282,97 @@ def bfs(_maze, start, goal):
     return False
 
 
-def get_distance_from_goal(pos):
-    return get_distance(pos, (dim - 1, dim - 1))
+def h(a, b):
+    return np.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
 
-
-class Node:
-    def __init__(self, coords, parent, distance, weight):
-        self.coords = coords
-        self.parent = parent
-        self.distance = distance
-        self.weight = weight
+def get_s_path(parent, current):
+    s_path = []
+    while current in parent:
+        current = parent[current]
+        s_path.append(current)
+    return s_path
 
 
 def a_star(_maze, start, goal):
-    fringe = [Node(start, None, 0, get_distance_from_goal(start))]
-    visited = []
-    # A* keeps a priority queue fringe
-    # each node keeps a record if its parent and current weight
-    # and its neighbors are inserted into the fringe at its distance+est
-    while len(fringe) > 0:
-        sorted(fringe, key=lambda x: x.weight)  # Sort by weight
-        current = fringe.pop(0)
-        print(f"\tcurrent: {current.coords}\tgoal: {goal}")
+    # populate g_score with infinity
+    g_score = []
+    for row in range(dim):
+        g_score.append([])
+        for col in range(dim):
+            g_score[row].append({(row, col): np.inf})
 
-        # the first time the goal node is popped with the smallest weight
-        # is when the shortest path is found
-        if current.coords == goal and (len(fringe) == 0 or fringe[0].weight <= current.weight):
-            # rebuild the shortest path
-            s_path = []
-            c = current.parent
-            while c is not None:
-                s_path.insert(0, c.coords)
-                c = c.parent
+    print(g_score)
 
-            # color shortest path
-            for i in s_path:
-                if i != (0, [0]) and i != goal:
-                    cell = pygame.Rect((MARGIN + CELL_SIZE) * i[1] + MARGIN,
-                                       (MARGIN + CELL_SIZE) * i[0] + MARGIN,
-                                       CELL_SIZE,
-                                       CELL_SIZE)
-                    pygame.draw.rect(screen, GREY, cell)
-                    # animate path
-                    pygame.display.update()
-                    pygame.time.delay(30)
+    parent = {}
+    visited = set(start)
 
-            print('\nVisited:')
-            print(visited)
+    # cost of path from start to n
+    g_score[start[0]][start[1]] = {start:0}
 
-            print('\nElements in fringe:')
-            print(fringe)
+    # our guess of the cheapest path from start to goal
+    f_score = {start:h(start, goal)}
+    fringe = []
 
-            pygame.display.flip()
+    heappush(fringe, (start, f_score[start]))
+    
+    # while fringe is not empty
+    while fringe:
+        # get element with the lowest f_score
+        current = heappop(fringe)[0]
+        visited.add(current)
+
+        if current == goal:
+            print('\nShortest path:')
+            print([goal] + get_s_path(parent, current))
+            color_s_path(current, [goal] + get_s_path(parent, current))
+
             print('\nSUCCESS')
-            print('Shortest path:')
-            print(s_path + [goal])
+
+            # print('\nVisited:')
+            # print(visited)
+
+            # print('\nElements in fringe:')
+            # print(fringe)
+
             return True
-        # insert the unvisited nodes of current into the queue
-        else:
-            neighbors = get_valid_neighbors(_maze, current.coords, visited)
-            for n in neighbors:
-                node = Node(n, current, current.distance + 1,
-                            current.distance + 1 + get_distance_from_goal((n[0], n[1])))
-                fringe.append(node)
-            visited.append(current.coords)
+
+        neighbors = get_valid_neighbors(_maze, current, visited)
+        for neighbor in neighbors:
+            # f(n) = path estimate from start to goal
+            # g(n) = cost of path from start to n
+            # h(n) = heuristic that estimates cost of shortest path from n to goal
+
+            # start -> neighbor through current
+            tentative_gScore = g_score[current[0]][current[1]].get(current) + h(current, neighbor)
+
+            # better path
+            if tentative_gScore < g_score[neighbor[0]][neighbor[1]].get(neighbor):
+                parent[neighbor] = current
+                g_score[neighbor[0]][neighbor[1]] = {neighbor:tentative_gScore}
+
+                f_score[neighbor] = tentative_gScore + h(neighbor, goal)
+                visited.add(neighbor)
+                heappush(fringe, (neighbor, f_score[neighbor]))
+
+    print('\nFAILED')
     return False
 
 
 maze = get_maze()
-# print(maze)
-show_maze(maze)
+# show_maze(maze)
 # fired = start_fire(maze)
 # print(f"Fire starts: {fired[1]}")
 # show_maze(fired[0])
 
-fired = start_fire(maze)
-print(f"Fire starts: {fired[1]}")
-show_maze(fired[0])
+# fired = start_fire(maze)
+# print(f"Fire starts: {fired[1]}")
+show_maze(maze)
 
-# bfs(maze, (0, 0), (dim - 1, dim - 1))
-a_star(maze, (0,0), (dim - 1, dim - 1))
+start_time = time.time()
+a_star(maze, (0, 0), (dim - 1, dim - 1))
+print("%s seconds" % (time.time() - start_time))
+
+print(maze)
 
 # keep program running until user exits the window
 running = True
