@@ -473,8 +473,8 @@ def bfs_3(_maze, start, goal):
 
         else:
             neighbors = get_neighbors_3(_maze, current, visited)
-            if len(neighbors) < 1:
-                break
+            #if len(neighbors) < 1:
+            #    break
             for neighbor in neighbors:
                 visited.add(neighbor)
                 fringe.append((neighbor, s_path + [current]))
