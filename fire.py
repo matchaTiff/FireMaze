@@ -195,6 +195,7 @@ def show_maze(_maze: list):
     pygame.display.flip()
 
 
+# for strategy 1
 def get_neighbors_1(_maze, current, visited):
     """
   Get adjacent neighbors which are not an obstacle
@@ -222,6 +223,7 @@ def get_neighbors_1(_maze, current, visited):
 
     return neighbors
 
+# for strategy 2
 def get_neighbors_2(_maze, current, visited):
     """
   Get adjacent neighbors which are not an obstacle
@@ -264,6 +266,7 @@ def color_s_path(current, s_path):
 
     pygame.display.flip()
 
+# for strategy 1
 def bfs_1(_maze, start, goal):
     """
   Runs bfs on the maze and determines the shortest path from start to goal
@@ -312,6 +315,7 @@ def bfs_1(_maze, start, goal):
     print('\nFAILED')
     return False
 
+# for strategy 2
 def bfs_2(_maze, start, goal):
     """
   Runs bfs on the maze and determines the shortest path from start to goal
@@ -365,11 +369,12 @@ def bfs_2(_maze, start, goal):
     print('\nFAILED')
     return False
 
+# strategy 3
+def dfs_3(_maze, start, goal):
+    
+    return False
+
 maze = get_maze()
-# show_maze(maze)
-# fired = start_fire(maze)
-# print(f"Fire starts: {fired[1]}")
-# show_maze(fired[0])
 
 # Strategy 1
 # fired = start_fire(maze)
@@ -378,10 +383,16 @@ maze = get_maze()
 # bfs_1(maze, (0, 0), (dim - 1, dim - 1))
 
 # Strategy 2
-fired = start_fire(maze)
-print(f"Fire starts: {fired[1]}")
-show_maze(maze)
-bfs_1(maze, (0, 0), (dim - 1, dim - 1))
+# fired = start_fire(maze)
+# print(f"Fire starts: {fired[1]}")
+# show_maze(maze)
+# bfs_2(maze, (0, 0), (dim - 1, dim - 1))
+
+# Strategy 3
+# fired = start_fire(maze)
+# print(f"Fire starts: {fired[1]}")
+# show_maze(maze)
+# bfs_3(maze, (0, 0), (dim - 1, dim - 1))
 
 print(maze)
 
