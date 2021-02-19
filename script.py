@@ -1,3 +1,4 @@
+from fire import bfs_1, bfs_2
 import matplotlib.pyplot as plt
 from matplotlib.collections import EventCollection
 import numpy as np
@@ -6,8 +7,10 @@ import random
 import sys
 import time
 import collections
+import numpy as np
+from heapq import heappop, heappush
 
-dim = 20
+dim = 500
 
 if sys.version_info[0] < 3:
     raise Exception("Python 3 is required for this program.")
@@ -102,15 +105,16 @@ def bfs(_maze, start, goal):
   """
     visited = set(start)
     fringe = collections.deque([start])
-
+    num_nodes = 1
     while fringe:
 
         # get the first element from queue
         current = fringe.popleft()
+        num_nodes += 1
 
         if current == goal:
             print('\nSUCCESS')
-            return True
+            return True, num_nodes
 
         else:
             neighbors = get_valid_neighbors(_maze, current, visited)
@@ -118,75 +122,72 @@ def bfs(_maze, start, goal):
             fringe.extend(neighbors)
 
     print('\nFAILED')
-    return False
+    return False, num_nodes
 
-def get_distance(start, goal):
-    """
-    Returns the distance between two spots on a grid.
-    :param start:
-    :param goal:
-    :return:
-    """
-    return (goal[0] - start[0]) + (goal[1] - start[1])
-
-def get_distance_from_goal(pos):
-    return get_distance(pos, (dim - 1, dim - 1))
-
-
-class Node:
-    def __init__(self, coords, parent, distance, weight):
-        self.coords = coords
-        self.parent = parent
-        self.distance = distance
-        self.weight = weight
+def h(a, b):
+    return np.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
 
 
 def a_star(_maze, start, goal):
-    fringe = collections.deque([Node(start, None, 0, get_distance_from_goal(start))])
-    visited = set()
-    while len(fringe) > 0:
+    # populate g_score with infinity
+    g_score = []
+    for row in range(dim):
+        g_score.append([])
+        for col in range(dim):
+            g_score[row].append({(row, col): np.inf})
 
-        sorted(fringe, key=lambda x: x.weight)  # Sort by weight
-        current = fringe.popleft()
+    # print(g_score)
 
-        if current.coords == goal and (len(fringe) == 0 or fringe[0].weight <= current.weight):
+    num_nodes = 1
+
+    parent = {}
+    visited = set(start)
+
+    # cost of path from start to n
+    g_score[start[0]][start[1]] = {start:0}
+
+    # our guess of the cheapest path from start to goal
+    f_score = {start:h(start, goal)}
+    fringe = []
+
+    heappush(fringe, (f_score[start], start))
+    
+    # while fringe is not empty
+    while fringe:
+        # get element with the lowest f_score
+        current = heappop(fringe)[1]
+        visited.add(current)
+
+        num_nodes += 1
+
+        if current == goal:
+            # print('\nShortest path:')
+            # print([goal] + get_s_path(parent, current))
+            # color_s_path(current, [goal] + get_s_path(parent, current))
+
             print('\nSUCCESS')
-            return True
-        else:
-            neighbors = set()
-            row = current.coords[0]
-            col = current.coords[1]
+            return True, num_nodes
 
-            # left
-            if row > 0 and (row - 1, col) not in visited and _maze[row - 1][col] != 1 and _maze[row - 1][col] != 2:
-                left_n = (row - 1, col)
-                neighbors.add(left_n)
-                node = Node(left_n, current, current.distance + 1, current.distance + 1 + get_distance_from_goal((left_n[0], left_n[1])))
-                fringe.append(node)
-            # right
-            if row + 1 < dim and (row + 1, col) not in visited and _maze[row + 1][col] != 1 and _maze[row + 1][col] != 2:
-                right_n = (row + 1, col)
-                neighbors.add(right_n)
-                node = Node(right_n, current, current.distance + 1, current.distance + 1 + get_distance_from_goal((right_n[0], right_n[1])))
-                fringe.append(node)
-            # down
-            if col > 0 and (row, col - 1) not in visited and _maze[row][col - 1] != 1 and _maze[row][col - 1] != 2:
-                down_n = (row, col - 1)
-                neighbors.add(down_n)
-                node = Node(down_n, current, current.distance + 1, current.distance + 1 + get_distance_from_goal((down_n[0], down_n[1])))
-                fringe.append(node)
-            # up
-            if col + 1 < dim and (row, col + 1) not in visited and _maze[row][col + 1] != 1 and _maze[row][col + 1] != 2:
-                up_n = (row, col + 1)
-                neighbors.add(up_n)
-                node = Node(up_n, current, current.distance + 1, current.distance + 1 + get_distance_from_goal((up_n[0], up_n[1])))
-                fringe.append(node)
+        neighbors = get_valid_neighbors(_maze, current, visited)
+        for neighbor in neighbors:
+            # f(n) = path estimate from start to goal
+            # g(n) = cost of path from start to n
+            # h(n) = heuristic that estimates cost of shortest path from n to goal
 
-            visited.add(current.coords)
+            # start -> neighbor through current
+            tentative_gScore = g_score[current[0]][current[1]].get(current) + h(current, neighbor)
+
+            # check for better path
+            if tentative_gScore < g_score[neighbor[0]][neighbor[1]].get(neighbor):
+                parent[neighbor] = current
+                g_score[neighbor[0]][neighbor[1]] = {neighbor:tentative_gScore}
+
+                f_score[neighbor] = tentative_gScore + h(neighbor, goal)
+                visited.add(neighbor)
+                heappush(fringe, (f_score[neighbor], neighbor))
 
     print('\nFAILED')
-    return False
-
+    return False, num_nodes
 
 def simulate_dfs(n, p):
     success = 0
@@ -234,40 +235,43 @@ def plot_dfs():
     plt.plot(x_axis, p_success)
     plt.show()
 
-def simulate_bfs(n, p):
-    num_nodes = 0
+def simulate_bfs_astar(n, p):
+    num_nodes_bfs = 0
+    num_nodes_astar = 0
     for i in range(n):
         maze = get_maze(p)
-        if bfs(maze, (0, 0), (dim - 1, dim - 1)):
-            num_nodes += incoming
+        num_nodes_bfs += bfs(maze, (0, 0), (dim - 1, dim - 1))[1]
+        num_nodes_astar += a_star(maze, (0, 0), (dim - 1, dim - 1))[1]
     # return avg
-    return num_nodes/n
+    return num_nodes_bfs/n, num_nodes_astar/n
 
 def plot_bfs_astar():
     # y data
+    avg_nodes = []
     avg_nodes_bfs = []
-    sims = 100
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.1))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.125))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.150))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.175))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.2))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.225))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.250))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.275))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.3))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.325))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.350))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.375))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.4))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.425))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.450))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.475))
-    avg_nodes_bfs.append(simulate_bfs(sims, 0.5))
-
     avg_nodes_astar = []
+    sims = 150
+    avg_nodes.append(simulate_bfs_astar(sims, 0.1))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.125))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.150))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.175))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.2))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.225))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.250))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.275))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.3))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.325))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.350))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.375))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.4))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.425))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.450))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.475))
+    avg_nodes.append(simulate_bfs_astar(sims, 0.5))
 
-    
+    avg_nodes_bfs = [i[0] for i in avg_nodes]
+    avg_nodes_astar = [i[1] for i in avg_nodes]
+
     # x axis
     x_axis = [0.1, 0.125, 0.150, 0.175, 
               0.2, 0.225, 0.250, 0.275, 
@@ -275,24 +279,32 @@ def plot_bfs_astar():
               0.4, 0.425, 0.450, 0.475,
               0.5]
 
-    plt.title('DFS')
+    plt.title('Number of nodes explored by BFS, A* vs Obstacle Density')
     plt.xlabel('Obstacle density p')
-    plt.ylabel('Probability of success')
+    plt.ylabel('Average Number Nodes')
 
     plt.xlim([0.1, 0.5])
-    plt.ylim([0.0, 1.0])
 
     # set what ticks should be
     plt.xticks(np.arange(0.1, 0.525, 0.025))
     # plot bfs line
-    plt.plot(x_axis, avg_nodes_bfs, label = "bfs")
+    plt.plot(x_axis, avg_nodes_bfs, label = "BFS")
     # plot a* line
     plt.plot(x_axis, avg_nodes_astar, label = "A*")
+    plt.legend()
     plt.show()
 
-maze = get_maze(0.3)
-start_time = time.time()
-a_star(maze, (0, 0), (dim - 1, dim - 1))
-print("%s seconds" % (time.time() - start_time))
+def simulate_strats():
+    bfs_1
+    bfs_2
+    bfs_3
+# maze = get_maze(0.3)
+# start_time = time.time()
+# a_star(maze, (0, 0), (dim - 1, dim - 1))
+# print("%s seconds" % (time.time() - start_time))
+
+
+
+plot_bfs_astar()
 
 # plot_dfs()
