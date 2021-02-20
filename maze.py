@@ -22,7 +22,7 @@ pygame.display.set_caption("Fire Maze")
 screen.fill(BLACK)
 
 MARGIN = 1
-dim = 50
+dim = 20
 CELL_SIZE = WINDOW_SIZE[0] / dim - 1
 
 # initializes pygame
@@ -32,7 +32,7 @@ if sys.version_info[0] < 3:
     raise Exception("Python 3 is required for this program.")
 
 
-def get_maze(p: float = 0.1):
+def get_maze(p: float = 0.5):
     """
     Creates dim x dim grid with p probability blocks
     :param p: probability of a single space being blocked
@@ -178,13 +178,13 @@ def dfs(_maze, start, goal):
   :return: true if reachable, false otherwise
   """
     # fringe is a stack
-    fringe = [start]
+    fringe = [(start, [])]
 
     visited = set(start)
 
     # while fringe is not empty
     while fringe:
-        current = fringe.pop()
+        current, s_path = fringe.pop()
 
         # color visited cell except for start and goal
         # if (current != start and current != goal):
@@ -192,7 +192,7 @@ def dfs(_maze, start, goal):
         #                        (MARGIN + CELL_SIZE) * current[0] + MARGIN,
         #                        CELL_SIZE,
         #                        CELL_SIZE)
-        #     pygame.draw.rect(screen, GREY, cell)
+        #     pygame.draw.rect(screen, GREEN, cell)
         #     # animate path
         #     pygame.display.update()
         #     pygame.time.delay(30)
@@ -204,17 +204,17 @@ def dfs(_maze, start, goal):
 
             # print('\nElements in fringe:')
             # print(fringe)
+            color_s_path(current, s_path)
 
             # pygame.display.flip()
             print('\nSUCCESS')
-            return True
+            return True, s_path + [goal]
 
         else:
             neighbors = get_valid_neighbors(_maze, current, visited)
-            # update() add items from other iterables.
-            visited.update(neighbors)
-            # adds list elements to fringe
-            fringe.extend(neighbors)
+            for neighbor in neighbors:
+                visited.add(neighbor)
+                fringe.append((neighbor, s_path + [current]))
 
     # print('\nVisited:')
     # print(visited)
@@ -223,7 +223,7 @@ def dfs(_maze, start, goal):
     # print(fringe)
 
     print('\nFAILED')
-    return False
+    return False, s_path
 
 
 def bfs(_maze, start, goal):
@@ -244,16 +244,18 @@ def bfs(_maze, start, goal):
 
         if current == goal:
 
-            # color visited cell except for start and goal
-            if (current != start and current != goal):
-                cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN,
-                                   (MARGIN + CELL_SIZE) * current[0] + MARGIN,
-                                   CELL_SIZE,
-                                   CELL_SIZE)
-                pygame.draw.rect(screen, GREEN, cell)
-                # animate path
-                pygame.display.update()
-                pygame.time.delay(30)
+            # # color visited cell except for start and goal
+            # if (current != start and current != goal):
+            #     cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN,
+            #                        (MARGIN + CELL_SIZE) * current[0] + MARGIN,
+            #                        CELL_SIZE,
+            #                        CELL_SIZE)
+            #     pygame.draw.rect(screen, GREEN, cell)
+            #     # animate path
+            #     pygame.display.update()
+            #     pygame.time.delay(30)
+
+            color_s_path(current, s_path)
 
             # print('\nVisited:')
             # print(visited)
@@ -265,7 +267,7 @@ def bfs(_maze, start, goal):
             print('\nSUCCESS')
             # print('Shortest path:')
             # print(s_path + [goal])
-            return True
+            return True, s_path + [goal]
 
         else:
             neighbors = get_valid_neighbors(_maze, current, visited)
@@ -279,13 +281,25 @@ def bfs(_maze, start, goal):
     # print(fringe)
 
     print('\nFAILED')
-    return False
+    return False, s_path
 
 
 def h(a, b):
+    """
+    Euclidean distance metric that determines the distance between two points
+    :param a: position a
+    :param b: position b
+    :return: distance between a and b
+    """
     return np.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
 
 def get_s_path(parent, current):
+    """
+    Get the shortest path by backtracking through the parent of the nodes
+    :param parent: parent
+    :param current: current cell
+    :return: shortest path
+    """
     s_path = []
     while current in parent:
         current = parent[current]
@@ -294,6 +308,13 @@ def get_s_path(parent, current):
 
 
 def a_star(_maze, start, goal):
+    """
+    Determines the shortest path from start to goal using the euclidean distance metric
+    :param _maze: maze as a grid
+    :param start: starting cell
+    :param goal: goal cell
+    :return: shortest path
+    """
     # populate g_score with infinity
     g_score = []
     for row in range(dim):
@@ -301,7 +322,7 @@ def a_star(_maze, start, goal):
         for col in range(dim):
             g_score[row].append({(row, col): np.inf})
 
-    print(g_score)
+    # print(g_score)
 
     parent = {}
     visited = set(start)
@@ -313,6 +334,7 @@ def a_star(_maze, start, goal):
     f_score = {start:h(start, goal)}
     fringe = []
 
+    # push starting position with its fscore
     heappush(fringe, (f_score[start], start))
     
     # while fringe is not empty
@@ -334,7 +356,7 @@ def a_star(_maze, start, goal):
             # print('\nElements in fringe:')
             # print(fringe)
 
-            return True
+            return True, [goal] + get_s_path(parent, current)
 
         neighbors = get_valid_neighbors(_maze, current, visited)
         for neighbor in neighbors:
@@ -355,7 +377,7 @@ def a_star(_maze, start, goal):
                 heappush(fringe, (f_score[neighbor], neighbor))
 
     print('\nFAILED')
-    return False
+    return False, get_s_path(parent, current)
 
 
 maze = get_maze()
@@ -368,11 +390,9 @@ maze = get_maze()
 # print(f"Fire starts: {fired[1]}")
 show_maze(maze)
 
-start_time = time.time()
-a_star(maze, (0, 0), (dim - 1, dim - 1))
-print("%s seconds" % (time.time() - start_time))
-
-print(maze)
+# start_time = time.time()
+# dfs(maze, (0, 0), (dim - 1, dim - 1))
+# print("%s seconds" % (time.time() - start_time))
 
 # keep program running until user exits the window
 running = True
