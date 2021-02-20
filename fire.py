@@ -162,6 +162,12 @@ def advance_fire_one_step(_maze, q):
 
 
 def color_fire(_maze: list, current):
+    """
+    Colors fire blocks with pygame.
+    :param _maze:
+    :param current:
+    :return:
+    """
     row = current[0]
     col = current[1]
     if _maze[row][col] == 2:
@@ -401,6 +407,7 @@ def is_next_to_fire(_maze, current):
 
 def get_neighbors_3(_maze, current, visited):
     """
+    For strategy 3.
     Get adjacent neighbors that are not blocked, fire, or next to fire.
     :param _maze:
     :param current:
@@ -574,7 +581,7 @@ def bfs_3(_maze, q):
     return True
 
 
-
+# Test running
 maze = get_maze(0.3)
 fired = start_fire(maze)
 
