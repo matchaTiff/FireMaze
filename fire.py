@@ -3,7 +3,10 @@ import random
 import sys
 import time
 import collections
+import matplotlib.pyplot as plt
+from matplotlib.collections import EventCollection
 import numpy as np
+from pygame.scrap import get
 
 # colors
 BLACK = (50, 50, 50)
@@ -19,7 +22,7 @@ pygame.display.set_caption("Fire Maze")
 screen.fill(BLACK)
 
 MARGIN = 1
-dim = 10
+dim = 20
 CELL_SIZE = WINDOW_SIZE[0] / dim - 1
 
 # initializes pygame
@@ -77,6 +80,12 @@ def start_fire(_maze: list):
 
 
 def fire_get_neighbors(_maze, current):
+    """
+    Get fire cell's neighbors that are not an obstacle or on fire
+    :param _maze: maze as a grid
+    :param current: current cell
+    :return: neighbors
+    """
     neighbors = set()
     row = current[0]
     col = current[1]
@@ -98,6 +107,12 @@ def fire_get_neighbors(_maze, current):
 
 
 def count_fire(_maze, current):
+    """
+    Count number of adjacent cells that are on fire
+    :param _maze: maze as a grid
+    :param current: current cell
+    :return: fire count
+    """
     row = current[0]
     col = current[1]
 
@@ -120,6 +135,12 @@ def count_fire(_maze, current):
 
 
 def advance_fire_one_step(_maze, q):
+    """
+    Advance fire for every move
+    :param _maze: maze as a grid
+    :param q: flammability rate q
+    :return: maze with fire
+    """
     maze_copy = _maze
     np_maze = np.array(_maze)
     # get cells on fire
@@ -130,7 +151,7 @@ def advance_fire_one_step(_maze, q):
         neighbors = fire_get_neighbors(_maze, (i[0], i[1]))
         for neighbor in neighbors:
             k = count_fire(_maze, neighbor)
-            prob = 1 - ((1 - q) ** k)
+            prob = 1 - (1 - q)**k
             # mark cell on fire given probability
             maze_copy[neighbor[0]][neighbor[1]] = (random.choices([2, 0], weights=(prob, 1 - prob))[0])
             # color cell red for fire
@@ -227,11 +248,106 @@ def get_neighbors_1(_maze, current, visited):
 
     return neighbors
 
+def get_shortest_path_1(_maze, start, goal):
+    """
+    For Strategy 1, runs bfs on the maze and determines the shortest path from start to goal
+    :param _maze: maze as a grid
+    :param start: starting cell
+    :param goal: goal cell
+    :return: shortest path
+    """
+    visited = set(start)
+    fringe = collections.deque([(start, [])])
+
+    while fringe:
+
+        # get the first element from queue
+        current, s_path = fringe.popleft()
+
+        if current == goal:
+
+            # print('\nSUCCESS')
+            # print('Shortest path:')
+            # print(s_path + [goal])
+            return True, s_path + [goal]
+
+        else:
+            neighbors = get_neighbors_1(_maze, current, visited)
+            for neighbor in neighbors:
+                visited.add(neighbor)
+                fringe.append((neighbor, s_path + [current]))
+
+    # print('\nFAILED')
+    return False, s_path
+
+def get_shortest_path_2(_maze, start, goal):
+    """
+    For Strategy 2, runs bfs on the maze and determines the shortest path from start to goal
+    :param _maze: maze as a grid
+    :param start: starting cell
+    :param goal: goal cell
+    :return: shortest path
+    """
+    visited = set(start)
+    fringe = collections.deque([(start, [])])
+
+    while fringe:
+
+        # get the first element from queue
+        current, s_path = fringe.popleft()
+
+        if current == goal:
+
+            # print('\nSUCCESS')
+            # print('Shortest path:')
+            # print(s_path + [goal])
+            return True, s_path + [goal]
+
+        else:
+            neighbors = get_neighbors_2(_maze, current, visited)
+            for neighbor in neighbors:
+                visited.add(neighbor)
+                fringe.append((neighbor, s_path + [current]))
+
+    # print('\nFAILED')
+    return False, s_path
+
+def get_shortest_path_3(_maze, start, goal):
+    """
+    For Strategy 3, runs bfs on the maze and determines the shortest path from start to goal
+    :param _maze: maze as a grid
+    :param start: starting cell
+    :param goal: goal cell
+    :return: shortest path
+    """
+    visited = set(start)
+    fringe = collections.deque([(start, [])])
+
+    while fringe:
+
+        # get the first element from queue
+        current, s_path = fringe.popleft()
+
+        if current == goal:
+
+            # print('\nSUCCESS')
+            # print('Shortest path:')
+            # print(s_path + [goal])
+            return True, s_path + [goal]
+
+        else:
+            neighbors = get_neighbors_3(_maze, current, visited)
+            for neighbor in neighbors:
+                visited.add(neighbor)
+                fringe.append((neighbor, s_path + [current]))
+
+    # print('\nFAILED')
+    return False, s_path
 
 # for strategy 2
 def get_neighbors_2(_maze, current, visited):
     """
-  Get adjacent neighbors which are not an obstacle
+  Get adjacent neighbors which are not an obstacle and on fire
   :param _maze: maze as a grid
   :param current: current cell
   :param visited: list of visited cell positions
@@ -258,6 +374,12 @@ def get_neighbors_2(_maze, current, visited):
 
 
 def is_next_to_fire(_maze, current):
+    """
+    Check if current cell is adjacent to fire
+    :param _maze: generated maze
+    :param current: current position
+    :return: false if not fire, true otherwise
+    """
     row = current[0]
     col = current[1]
 
@@ -285,7 +407,6 @@ def get_neighbors_3(_maze, current, visited):
     :param visited:
     :return:
     """
-
     neighbors = set()
     row = current[0]
     col = current[1]
@@ -316,134 +437,123 @@ def color_s_path(current, s_path):
 
 
 # for strategy 1
-def bfs_1(_maze, start, goal):
+def bfs_1(_maze, q):
     """
-  Runs bfs on the maze and determines the shortest path from start to goal
-  :param _maze: maze as a grid
-  :param start: starting cell
-  :param goal: goal cell
-  :return: shortest path
-  """
-    visited = set(start)
-    fringe = collections.deque([(start, [])])
+    Runs strategy 1 on the maze using bfs
+    :param q: flammability
+    :return: false if burned, true otherwise
+    """
+    start = (0, 0)
+    goal = (dim - 1, dim - 1)
 
-    while fringe:
-        # get the first element from queue
-        current, s_path = fringe.popleft()
+    shortest_path = get_shortest_path_1(_maze, start, goal)
 
-        # color current cell
-        cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN, (MARGIN + CELL_SIZE) * current[0] + MARGIN,
-                           CELL_SIZE, CELL_SIZE)
-        pygame.draw.rect(screen, GREY, cell)
-        # animate path
-        pygame.display.update()
-        pygame.time.delay(40)
+    # no path from start to goal
+    if shortest_path[0] == False:
+        return False
 
-        advance_fire_one_step(_maze, 0.1)
-        pygame.time.delay(40)
+    # iterate through the shortest path
+    for i in range(len(shortest_path[1])):
+        current = (shortest_path[1])[i]
 
+        # advance fire each time it moves
+        advance_fire_one_step(_maze, q)
+
+        if current == goal:
+            # color_s_path(current, shortest_path[1])
+            # print('\nSUCCESS')
+            return True
+
+        # fire was on the path, burned in fire
         if _maze[current[0]][current[1]] == 2:
-            color_s_path(current, s_path)
-            print("\nFAILED")
+            # print("\nFAILED")
             return False
 
-        if current == goal:
-
-            color_s_path(current, s_path)
-
-            print('\nSUCCESS')
-
-            return True
-
-        else:
-            neighbors = get_neighbors_1(_maze, current, visited)
-            for neighbor in neighbors:
-                visited.add(neighbor)
-                fringe.append((neighbor, s_path + [current]))
-
-    color_s_path(current, s_path)
-    print('\nFAILED')
-    return False
-
-
 # for strategy 2
-def bfs_2(_maze, start, goal):
+def bfs_2(_maze, q):
     """
-  Runs bfs on the maze and determines the shortest path from start to goal
-  :param _maze: maze as a grid
-  :param start: starting cell
-  :param goal: goal cell
-  :return: shortest path
-  """
-    visited = set(start)
-    fringe = collections.deque([(start, [])])
+    Runs strategy 2 on the maze using bfs, recomputes path every step,
+    check adjacent cells if they are on fire
+    :param q: flammability
+    :return: false if burned, true otherwise
+    """
+    start = (0, 0)
+    goal = (dim - 1, dim - 1)
+    current = start
 
-    while fringe:
+    # get shortest path from start to goal
+    shortest_path = get_shortest_path_2(_maze, start, goal)
 
-        # get the first element from queue
-        current, s_path = fringe.popleft()
+    # no path from start to goal
+    if shortest_path[0] == False:
+        return False
 
-        # color current cell
-        cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN, (MARGIN + CELL_SIZE) * current[0] + MARGIN,
-                           CELL_SIZE, CELL_SIZE)
-        pygame.draw.rect(screen, GREY, cell)
-        # animate path
-        pygame.display.update()
-        pygame.time.delay(40)
+    while current != goal:
+        # no path from start to goal
+        if shortest_path[0] == False:
+            return False
 
         # make fire spread after each move
-        advance_fire_one_step(_maze, 0.1)
-        pygame.time.delay(40)
+        advance_fire_one_step(_maze, q)
+        # pygame.display.flip()
+        # pygame.time.delay(40)
 
-        if current == goal:
+        # get next node on shortest path
+        current = (shortest_path[1])[1]
 
-            # color visited cell except for start and goal
-            color_s_path(current, s_path)
+        # # color current cell
+        # cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN, (MARGIN + CELL_SIZE) * current[0] + MARGIN,
+        #                    CELL_SIZE, CELL_SIZE)
+        # pygame.draw.rect(screen, GREY, cell)
+        # # animate path
+        # pygame.display.update()
+        # pygame.time.delay(40)
 
-            # print('\nVisited:')
-            # print(visited)
+        # fire was on the path, burned in fire
+        if _maze[current[0]][current[1]] == 2:
+            # print("\nFAILED")
+            return False
+        
+        # recompute shortest path from current node to goal
+        shortest_path = get_shortest_path_2(_maze, current, goal)
 
-            # print('\nElements in fringe:')
-            # print(fringe)
-
-            print('\nSUCCESS')
-            print('Shortest path:')
-            print(s_path + [goal])
-            return True
-
-        else:
-            neighbors = get_neighbors_2(_maze, current, visited)
-            for neighbor in neighbors:
-                visited.add(neighbor)
-                fringe.append((neighbor, s_path + [current]))
-
-    color_s_path(current, s_path)
-    print('\nFAILED')
-    return False
-
+    color_s_path(current, shortest_path[1])
+    # print('\nSUCCESS')
+    return True
 
 # strategy 3
-def bfs_3(_maze, start, goal):
+def bfs_3(_maze, q):
     """
-  Runs bfs on the maze and determines the shortest path from start to goal
-  :param _maze: maze as a grid
-  :param start: starting cell
-  :param goal: goal cell
-  :return: shortest path
-  """
-    visited = set(start)
-    fringe = collections.deque([(start, [])])
-    round = 0
+    Runs strategy 3 on the maze using bfs, recomputes path every step,
+    checks if adjacent cells of neighbors are on fire
+    :param q: flammability
+    :return: false if burned, true otherwise
+    """
+    start = (0, 0)
+    goal = (dim - 1, dim - 1)
+    current = start
 
-    while fringe:
-        round += 1
-        print(f"\t\tROUND {round}")
-        print(f"\tfringe: {fringe}\n\tvisited: {visited}")
+    # get shortest path from start to goal
+    shortest_path = get_shortest_path_3(_maze, start, goal)
 
-        # get the first element from queue
-        current, s_path = fringe.popleft()
+    # no path from start to goal
+    if shortest_path[0] == False:
+        return False
 
-        # color current cell
+    while current != goal:
+        # no path from start to goal
+        if shortest_path[0] == False:
+            return False
+
+        # make fire spread after each move
+        advance_fire_one_step(_maze, q)
+        pygame.display.flip()
+        pygame.time.delay(40)
+
+        # get next node on shortest path
+        current = (shortest_path[1])[1]
+
+        # # color current cell
         cell = pygame.Rect((MARGIN + CELL_SIZE) * current[1] + MARGIN, (MARGIN + CELL_SIZE) * current[0] + MARGIN,
                            CELL_SIZE, CELL_SIZE)
         pygame.draw.rect(screen, GREY, cell)
@@ -451,59 +561,37 @@ def bfs_3(_maze, start, goal):
         pygame.display.update()
         pygame.time.delay(40)
 
-        # make fire spread after each move
-        advance_fire_one_step(_maze, 0.1)
-        pygame.time.delay(40)
+        # fire was on the path, burned in fire
+        if _maze[current[0]][current[1]] == 2:
+            # print("\nFAILED")
+            return False
+        
+        # recompute shortest path from current node to goal
+        shortest_path = get_shortest_path_3(_maze, current, goal)
 
-        if current == goal:
-
-            # color visited cell except for start and goal
-            color_s_path(current, s_path)
-
-            # print('\nVisited:')
-            # print(visited)
-
-            # print('\nElements in fringe:')
-            # print(fringe)
-
-            print('\nSUCCESS')
-            print('Shortest path:')
-            print(s_path + [goal])
-            return True
-
-        else:
-            neighbors = get_neighbors_3(_maze, current, visited)
-            #if len(neighbors) < 1:
-            #    break
-            for neighbor in neighbors:
-                visited.add(neighbor)
-                fringe.append((neighbor, s_path + [current]))
-
-    color_s_path(current, s_path)
-    print('\nFAILED')
-    return False
+    color_s_path(current, shortest_path[1])
+    # print('\nSUCCESS')
+    return True
 
 
 
-maze = get_maze()
+maze = get_maze(0.3)
+fired = start_fire(maze)
 
 # Strategy 1
-# fired = start_fire(maze)
 # print(f"Fire starts: {fired[1]}")
 # show_maze(maze)
-# bfs_1(maze, (0, 0), (dim - 1, dim - 1))
+# bfs_1(maze, 0.1)
 
 # Strategy 2
-# fired = start_fire(maze)
 # print(f"Fire starts: {fired[1]}")
 # show_maze(maze)
-# bfs_2(maze, (0, 0), (dim - 1, dim - 1))
+# bfs_2(maze, 0.1)
 
 # Strategy 3
-fired = start_fire(maze)
 print(f"Fire starts: {fired[1]}")
 show_maze(maze)
-bfs_3(maze, (0, 0), (dim - 1, dim - 1))
+bfs_3(maze, 0.3)
 
 print(maze)
 
